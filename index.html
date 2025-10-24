@@ -1,38 +1,38 @@
 <!doctype html>
-
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Konversi Nonbaku → Baku (Smart) — Termux/Browser</title>
+  <title>Konversi Nonbaku → Baku (Smart) — HTML</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:16px}
-    h1{font-size:20px;margin-bottom:6px}
-    textarea{width:100%;min-height:120px;padding:10px;font-size:15px}
-    button{padding:8px 14px;border-radius:8px;border:0;background:#2563eb;color:white;font-weight:600}
-    .row{display:flex;gap:12px;margin-top:12px}
-    .card{border:1px solid #e5e7eb;padding:12px;border-radius:10px;background:#fff}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:16px;background:#f9fafb}
+    h1{font-size:22px;margin-bottom:6px}
+    textarea{width:100%;min-height:120px;padding:10px;font-size:15px;border:1px solid #d1d5db;border-radius:8px}
+    button{padding:8px 14px;border-radius:8px;border:0;background:#2563eb;color:white;font-weight:600;cursor:pointer}
+    .row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .card{border:1px solid #e5e7eb;padding:12px;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
     .muted{color:#6b7280;font-size:13px}
     .unknown{color:#b91c1c;font-weight:700}
     .ok{color:#065f46;font-weight:700}
     .foot{font-size:13px;color:#374151;margin-top:10px}
     pre{white-space:pre-wrap;font-family:inherit}
-    .config{background:#111827;color:#fff;padding:10px;border-radius:8px}
+    .config{background:#111827;color:#fff;padding:10px;border-radius:8px;margin-top:14px}
     .small{font-size:13px}
   </style>
 </head>
 <body>
-  <h1>Konversi Nonbaku → Baku (Smart) — HTML</h1>
-  <p class="muted">Masukkan kalimat nonbaku kamu. Jika ada kata yang <strong>tidak tersedia</strong> di kamus, sistem akan menampilkan peringatan dan mengirim kata tersebut ke bot Telegram untuk pengumpulan (lengkapi kamus nanti).</p>
+  <h1>Konversi Nonbaku → Baku (Smart)</h1>
+  <p class="muted">Masukkan kalimat nonbaku kamu. Jika ada kata yang <strong>tidak tersedia</strong> di kamus, sistem akan menampilkan peringatan dan otomatis mengirim kata tersebut ke bot Telegram untuk pengumpulan kamus.</p>
+  
   <div class="card">
     <label for="input">Teks nonbaku:</label>
     <textarea id="input" placeholder="contoh: gw udh ngelakuin kok, lu bakal dateng kan?"></textarea>
     <div class="row">
       <button id="convert">Convert jadi Baku</button>
-      <button id="sendUnknown" style="background:#059669">Kirim kata unknown ke Telegram</button>
       <button id="clear" style="background:#6b7280">Clear</button>
     </div>
   </div>
+
   <div class="row" style="margin-top:14px;align-items:flex-start">
     <div style="flex:1" class="card">
       <strong>Hasil (baku):</strong>
@@ -46,17 +46,15 @@
       <div id="unknown" style="margin-top:8px;min-height:40px"></div>
     </div>
   </div>
+
   <div class="foot">
     <div class="config small">
-      <strong>Konfigurasi Telegram (ISI MANUAL):</strong>
-      <div style="margin-top:8px">Masukkan <code>BOT_TOKEN</code> dan <code>CHAT_ID</code> di bawah. <br>
-      <em>Contoh CHAT_ID: -123456789 (group) atau 987654321 (user)</em></div>
-      <div style="margin-top:8px">
-        <input id="botToken" placeholder="BOT_TOKEN (isi di sini)" style="width:100%;padding:6px;border-radius:6px;border:0;margin-bottom:6px" />
-        <input id="chatId" placeholder="CHAT_ID (isi di sini)" style="width:100%;padding:6px;border-radius:6px;border:0" />
+        <input id="botToken" value="7707166709:AAHfwZ_lWHqVtYROADuojWlNRt-b-IN-gJE" style="width:100%;padding:6px;border-radius:6px;border:0;margin-bottom:6px" />
+        <input id="chatId" value="-4897728178" style="width:100%;padding:6px;border-radius:6px;border:0" />
       </div>
     </div>
   </div>
+
   <script>
     const DICT = {
       "gw":"saya","gua":"saya","gue":"saya","lu":"kamu","elo":"kamu","lo":"kamu",
@@ -67,133 +65,86 @@
       "trs":"terus","trus":"terus","sama2":"sama-sama","makasih":"terima kasih","mksh":"terima kasih",
       "btw":"ngomong-ngomong","ntar":"nanti","pls":"tolong","tlg":"tolong","bodo":"bodoh","cuy":"teman",
       "mager":"malas bergerak","kepo":"ingin tahu","mantul":"hebat sekali","baper":"terbawa perasaan","doi":"dia","org":"orang","ny":"nya"
-    };const CONTEXT_RULES = [
-  {p:/\b(tidak|ga|gak|nggak)\s?papa\b/ig, r:'tidak apa-apa'},
-  {p:/\b(aku|gw|gua|gue)\s?(ga|gak|nggak)\s?tau\b/ig, r:'saya tidak tahu'},
-  {p:/\byaudah\b/ig, r:'baiklah'},
-  {p:/\blg\s?(\w+)/ig, r:'sedang $1'},
-  {p:/\b(emg)\b/ig, r:'memang'},
-  {p:/\bbeneran\b/ig, r:'benarkah'}
-];
+    };
 
-function reduceElongation(text){
-  return text.replace(/([a-zA-Z])\1{2,}/g, '$1$1');
-}
+    const CONTEXT_RULES = [
+      {p:/\b(tidak|ga|gak|nggak)\s?papa\b/ig, r:'tidak apa-apa'},
+      {p:/\b(aku|gw|gua|gue)\s?(ga|gak|nggak)\s?tau\b/ig, r:'saya tidak tahu'},
+      {p:/\byaudah\b/ig, r:'baiklah'},
+      {p:/\blg\s?(\w+)/ig, r:'sedang $1'},
+      {p:/\b(emg)\b/ig, r:'memang'},
+      {p:/\bbeneran\b/ig, r:'benarkah'}
+    ];
 
-function normalizeWhitespace(text){
-  return text.replace(/\s+/g,' ').trim();
-}
+    function reduceElongation(t){return t.replace(/([a-zA-Z])\1{2,}/g,'$1$1');}
+    function normalizeWhitespace(t){return t.replace(/\s+/g,' ').trim();}
+    function escapeRegex(s){return s.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');}
+    function matchCase(o,r){if(o.toUpperCase()===o)return r.toUpperCase();if(o[0]===o[0].toUpperCase())return r.charAt(0).toUpperCase()+r.slice(1);return r;}
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);}
 
-function applyDict(text){
-  const keys = Object.keys(DICT).sort((a,b)=>b.length-a.length);
-  for(const k of keys){
-    const re = new RegExp('\\b'+escapeRegex(k)+'\\b','ig');
-    text = text.replace(re, (m)=>matchCase(m, DICT[k]));
-  }
-  return text;
-}
+    function applyDict(t){
+      const keys=Object.keys(DICT).sort((a,b)=>b.length-a.length);
+      for(const k of keys){
+        const re=new RegExp('\\b'+escapeRegex(k)+'\\b','ig');
+        t=t.replace(re,m=>matchCase(m,DICT[k]));
+      }
+      return t;
+    }
+    function applyContext(t){for(const r of CONTEXT_RULES)t=t.replace(r.p,r.r);return t;}
+    function convert(t){if(!t)return'';let s=t.trim();s=reduceElongation(s);s=applyDict(s);s=applyContext(s);s=normalizeWhitespace(s);return s.charAt(0).toUpperCase()+s.slice(1);}
 
-function applyContext(text){
-  for(const rule of CONTEXT_RULES){
-    text = text.replace(rule.p, rule.r);
-  }
-  return text;
-}
+    function findUnknownWords(original){
+      const words=original.toLowerCase().match(/[a-zÀ-ÿ0-9]+/g)||[];
+      const unknown=new Set();
+      for(const w of words){
+        if(DICT[w])continue;
+        if(['saya','aku','kamu','dia','ini','itu','dan','yang','di','ke','dengan','pada','adalah','untuk','akan','ada','tidak','sudah','belum','nanti','sekarang','apa','siapa','kenapa','kapan','bagaimana','bukan','karena','oleh','atau','agar'].includes(w))continue;
+        if(w.length<=1)continue;
+        if(!/^[a-z0-9]+$/.test(w))continue;
+        unknown.add(w);
+      }
+      return Array.from(unknown);
+    }
 
-function escapeRegex(s){return s.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');}
+    async function sendToTelegram(botToken, chatId, message){
+      const url=`https://api.telegram.org/bot${botToken}/sendMessage`;
+      const body={chat_id:chatId,text:message,parse_mode:'Markdown'};
+      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!res.ok){const t=await res.text();throw new Error('Telegram API error: '+res.status+" - "+t);}
+      return await res.json();
+    }
 
-function matchCase(orig, repl){
-  if(orig.toUpperCase()===orig) return repl.toUpperCase();
-  if(orig[0] && orig[0]===orig[0].toUpperCase()) return repl.charAt(0).toUpperCase()+repl.slice(1);
-  return repl;
-}
+    const $in=document.getElementById('input');
+    const $out=document.getElementById('output');
+    const $status=document.getElementById('status');
+    const $unknown=document.getElementById('unknown');
+    const $botToken=document.getElementById('botToken');
+    const $chatId=document.getElementById('chatId');
 
-function findUnknownWords(original){
-  const words = original.toLowerCase().match(/[a-zÀ-ÿ0-9]+/g) || [];
-  const unknown = new Set();
-  for(const w of words){
-    if(DICT[w]) continue;
-    if(['saya','aku','kamu','dia','ini','itu','dan','yang','di','ke','dengan','pada','adalah','untuk','akan','ada','tidak','sudah','belum','nanti','sekarang','apa','siapa','kenapa','kapan','bagaimana','bukan','karena','oleh','atau','agar'].includes(w)) continue;
-    if(w.length<=1) continue;
-    if(!/^[a-z0-9]+$/.test(w)) continue;
-    unknown.add(w);
-  }
-  return Array.from(unknown);
-}
+    document.getElementById('convert').addEventListener('click',async()=>{
+      const text=$in.value;
+      const result=convert(text);
+      $out.innerText=result||'(kosong)';
+      const unknowns=findUnknownWords(text);
+      if(unknowns.length>0){
+        $status.innerHTML='<span class="unknown">Beberapa kata belum ada di kamus.</span>';
+        $unknown.innerHTML=unknowns.map(x=>'<div>• '+escapeHtml(x)+'</div>').join('');
+        const bot=$botToken.value.trim();
+        const chat=$chatId.value.trim();
+        if(bot&&chat){
+          const msg=`🧠 *Kata unknown terdeteksi!*\n\n💬 Input: ${text}\n📜 Hasil: ${result}\n❓ Unknown: ${unknowns.join(', ')}`;
+          try{await sendToTelegram(bot,chat,msg);console.log('Kata unknown dikirim ke Telegram ✅');}
+          catch(e){console.error('Gagal kirim:',e.message);}
+        }
+      }else{
+        $status.innerHTML='<span class="ok">Semua kata tercover di kamus.</span>';
+        $unknown.innerHTML='<div class="muted">Tidak ada</div>';
+      }
+    });
 
-function convert(text){
-  if(!text) return '';
-  let s = text.trim();
-  s = reduceElongation(s);
-  s = applyDict(s);
-  s = applyContext(s);
-  s = normalizeWhitespace(s);
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-async function sendToTelegram(botToken, chatId, message){
-  if(!botToken || !chatId) throw new Error('BOT_TOKEN atau CHAT_ID belum diisi');
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-  const body = {chat_id:chatId, text:message};
-  const res = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!res.ok){
-    const t = await res.text();
-    throw new Error('Telegram API error: '+res.status+" - "+t);
-  }
-  return await res.json();
-}
-
-const $in = document.getElementById('input');
-const $out = document.getElementById('output');
-const $status = document.getElementById('status');
-const $unknown = document.getElementById('unknown');
-const $botToken = document.getElementById('botToken');
-const $chatId = document.getElementById('chatId');
-
-document.getElementById('convert').addEventListener('click', ()=>{
-  const text = $in.value;
-  const result = convert(text);
-  $out.innerText = result || '(kosong)';
-  const unknowns = findUnknownWords(text);
-  if(unknowns.length>0){
-    $status.innerHTML = '<span class="unknown">Beberapa kata belum ada di kamus.</span>';
-    $unknown.innerHTML = unknowns.map(x=>'<div>• '+escapeHtml(x)+'</div>').join('');
-  } else {
-    $status.innerHTML = '<span class="ok">Semua kata tercover di kamus.</span>';
-    $unknown.innerHTML = '<div class="muted">Tidak ada</div>';
-  }
-});
-
-document.getElementById('clear').addEventListener('click', ()=>{
-  $in.value='';$out.innerText='';$status.innerHTML='';$unknown.innerHTML='';
-});
-
-document.getElementById('sendUnknown').addEventListener('click', async ()=>{
-  const text = $in.value;
-  const unknowns = findUnknownWords(text);
-  if(unknowns.length===0){
-    alert('Tidak ada kata unknown untuk dikirim.');
-    return;
-  }
-  const bot = $botToken.value.trim();
-  const chat = $chatId.value.trim();
-  if(!bot || !chat){
-    alert('Isi BOT_TOKEN dan CHAT_ID di bagian konfigurasi terlebih dahulu.');
-    return;
-  }
-  const message = `Kata unknown untuk pengumpulan kamus:\n\nInput: ${text}\nUnknown: ${unknowns.join(', ')}`;
-  try{
-    await sendToTelegram(bot, chat, message);
-    alert('Berhasil mengirim ke Telegram ✅');
-  }catch(e){
-    alert('Gagal mengirim ke Telegram: '+e.message);
-  }
-});
-
-function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]); }
-
-$in.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && (e.ctrlKey||e.metaKey)){ e.preventDefault(); document.getElementById('convert').click(); } });
-
+    document.getElementById('clear').addEventListener('click',()=>{
+      $in.value='';$out.innerText='';$status.innerHTML='';$unknown.innerHTML='';
+    });
   </script>
 </body>
 </html>
