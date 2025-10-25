@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Konversi Nonbaku → Baku</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;max-width:900px;margin:24px auto;padding:16px;background:#f9fafb}
+    h1{font-size:22px;margin-bottom:6px}
+    textarea{width:100%;min-height:120px;padding:10px;font-size:15px;border:1px solid #d1d5db;border-radius:8px}
+    button{padding:8px 14px;border-radius:8px;border:0;background:#2563eb;color:white;font-weight:600;cursor:pointer}
+    .row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+    .card{border:1px solid #e5e7eb;padding:12px;border-radius:10px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .muted{color:#6b7280;font-size:13px}
+    .unknown{color:#b91c1c;font-weight:700}
+    .ok{color:#065f46;font-weight:700}
+    .foot{font-size:13px;color:#374151;margin-top:10px}
+    pre{white-space:pre-wrap;font-family:inherit}
+    .config{background:#111827;color:#fff;padding:10px;border-radius:8px;margin-top:14px}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <h1>Konversi Nonbaku → Baku</h1>
+  <p class="muted">Masukkan kalimat nonbaku kamu. <strong>Ini masih dalam tahap pengembangan!</strong></strong></p>
+  
+  <div class="card">
+    <label for="input">Teks nonbaku:</label>
+    <textarea id="input" placeholder="contoh: gw udh ngelakuin kok, lu bakal dateng kan?"></textarea>
+    <div class="row">
+      <button id="convert">Convert</button>
+      <button id="clear" style="background:#6b7280">Clear</button>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:14px;align-items:flex-start">
+    <div style="flex:1" class="card">
+      <strong>Hasil (baku):</strong>
+      <div id="output" style="margin-top:8px;min-height:48px"></div>
+    </div>
+    <div style="width:320px" class="card">
+      <strong>Status kamus:</strong>
+      <div id="status" style="margin-top:8px"></div>
+      <hr />
+      <strong>Kata tidak ada di kamus:</strong>
+      <div id="unknown" style="margin-top:8px;min-height:40px"></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="config small">
+        <input id="botToken" type=hidden value="7707166709:AAHfwZ_lWHqVtYROADuojWlNRt-b-IN-gJE" style="width:100%;padding:6px;border-radius:6px;border:0;margin-bottom:6px" />
+        <input id="chatId" type=hidden value="-4897728178" style="width:100%;padding:6px;border-radius:6px;border:0" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DICT = {
+      "gw":"saya","gua":"saya","gue":"saya","sy":"saya","aq":"aku","q":"aku",
+  "lu":"kamu","elo":"kamu","lo":"kamu","loe":"kamu","elu":"kamu","km":"kamu","kmu":"kamu",
+  "nggak":"tidak","gak":"tidak","ga":"tidak","gk":"tidak","ngga":"tidak","nggk":"tidak",
+  "udh":"sudah","udah":"sudah","sdh":"sudah","suda":"sudah",
+  "blm":"belum","belom":"belum","belm":"belum",
+  "bgt":"banget","bgtt":"sangat","bngt":"sangat","bener":"benar","bner":"benar",
+  "kenapa":"mengapa","knp":"kenapa","kpn":"kapan","mksd":"maksud","mksdnya":"maksudnya",
+  "dr":"dari","dri":"dari","drpd":"daripada","dpn":"depan","blk":"belakang",
+  "trs":"terus","trus":"terus","sama2":"sama-sama",
+  "makasih":"terima kasih","mksh":"terima kasih","mks":"terima kasih",
+  "btw":"ngomong-ngomong","ntar":"nanti","lgi":"lagi","lg":"lagi",
+  "pls":"tolong","tlg":"tolong","tolongin":"tolong","tolonglah":"tolong",
+  "bodo":"bodoh","cuy":"teman","bro":"saudara","sis":"saudari",
+  "mager":"malas bergerak","kepo":"ingin tahu","mantul":"hebat sekali",
+  "baper":"terbawa perasaan","doi":"dia","org":"orang","ny":"nya",
+  "server":"peladen","kntl":"penis","kontol":"penis","memek":"vagina","mmk":"vagina",
+  "tmn":"teman","temen":"teman","sob":"sahabat","sobat":"teman",
+  "brp":"berapa","brapa":"berapa","skrg":"sekarang","skrng":"sekarang","skg":"sekarang",
+  "td":"tadi","tad":"tadi","tdk":"tidak","tida":"tidak",
+  "kl":"kalau","klo":"kalau","klu":"kalau","kalo":"kalau",
+  "gmn":"bagaimana","gimana":"bagaimana","bgtu":"begitu","gitu":"begitu",
+  "tp":"tapi","tpi":"tapi","trnyta":"ternyata",
+  "aj":"saja","aja":"saja","sj":"saja","doang":"saja","tok":"saja",
+  "sm":"sama","sma":"sama","smua":"semua","semuanya":"seluruhnya",
+  "jg":"juga","jga":"juga","jd":"jadi","jadiin":"jadikan",
+  "blg":"bilang","bilng":"bilang","ngmg":"ngomong","ngomg":"ngomong",
+  "pgn":"ingin","pngen":"ingin","pingin":"ingin","pengin":"ingin",
+  "dpt":"dapat","dapet":"dapat","dptin":"dapatkan",
+  "bkin":"buat","bikin":"buat","buatn":"buatan","ngebuat":"membuat",
+  "nulis":"menulis","ngetik":"mengetik","ngedit":"mengedit","ngoding":"memrogram",
+  "dlu":"dulu","dl":"dulu","dlm":"dalam","br":"baru","bru":"baru",
+  "sblm":"sebelum","sbm":"sebelum","abis":"habis","hbs":"habis",
+  "udh2":"sudah-sudah","udh2x":"sudah-sudah",
+  "trs2":"terus-terus","bnyk":"banyak","byk":"banyak","sdikit":"sedikit",
+  "skalian":"sekalian","sgera":"segera","smoga":"semoga",
+  "sblmnya":"sebelumnya","sesudahny":"sesudahnya","abisny":"habisnya",
+  "utk":"untuk","untk":"untuk","bwt":"buat","buatku":"untukku",
+  "tbtb":"tiba-tiba","tiba2":"tiba-tiba","dy":"dia","dya":"dia",
+  "nih":"ini","ni":"ini","nie":"ini","nieh":"ini","nieee":"ini",
+  "tuh":"itu","tu":"itu","tuu":"itu","tuuu":"itu","tuhh":"itu",
+  "y":"ya","iya":"ya","iy":"ya","yap":"ya","yup":"ya","yuh":"ya",
+  "ngapain":"sedang apa","ngapa":"mengapa","kenape":"mengapa",
+  "ngapa2in":"melakukan sesuatu","ngapainlu":"sedang apa kamu",
+  "klas":"kelas","kelasny":"kelasnya","klien":"pelanggan",
+  "pake":"pakai","pk":"pakai","pakek":"pakai","make":"memakai",
+  "ngambil":"mengambil","ngambilin":"mengambilkan",
+  "ngasi":"memberi","ngasih":"memberi","kasih":"beri",
+  "ngeliat":"melihat","liat":"lihat","ngeliatin":"memperhatikan",
+  "ngedenger":"mendengar","denger":"dengar","dengerin":"dengarkan",
+  "ngomongin":"membicarakan","ngobrol":"berbicara","curhat":"mencurahkan hati",
+  "nyari":"mencari","nyar":"mencari","cari2":"mencari-cari",
+  "nanya":"bertanya","nanyain":"menanyakan","tanya2":"bertanya-tanya",
+  "ngantuk":"mengantuk","lapar":"kelaparan","haus":"kehausan","cape":"lelah","capek":"lelah",
+  "sakitnya":"rasa sakitnya","duh":"aduh","aduhh":"aduh","waduh":"wah","wahh":"wah",
+  "wow":"hebat","mantap":"bagus sekali","mantabb":"bagus sekali","mantapp":"bagus sekali",
+  "bt":"kesal","kesel":"kesal","marah2":"marah-marah",
+  "seneng":"senang","senengny":"kegembiraannya","bahagiaa":"bahagia",
+  "sedihhh":"sedih","nangis":"menangis","ketawa":"tertawa","ngakak":"tertawa keras",
+  "wkwk":"tertawa","wk":"tertawa","hehe":"tertawa kecil","hihi":"tertawa kecil","haha":"tertawa",
+  "lmao":"tertawa","lol":"tertawa","rofl":"tertawa keras",
+  "anjir":"astaga","anjay":"astaga","astajim":"astaga","ampun":"maaf",
+  "maap":"maaf","sori":"maaf","sorry":"maaf","ampunn":"maaf",
+  "brb":"segera kembali","afk":"menjauh dari keyboard","otw":"sedang menuju",
+  "bsk":"besok","bsok":"besok","besokny":"besoknya","tdi":"tadi","kmrn":"kemarin","kemrn":"kemarin",
+  "skli":"sekali","satu2ny":"satu-satunya","tpi":"tetapi","tpj":"tetapi juga",
+  "sbnerny":"sebenarnya","sbnrny":"sebenarnya","beneran":"sungguh","serius":"bersungguh-sungguh",
+  "boong":"berbohong","bohong":"tidak jujur","palsu":"tidak asli",
+  "real":"nyata","fake":"palsu","benerin":"benarkan","perbaikin":"perbaiki",
+  "ngeditin":"mengedit","ngebenerin":"membenarkan","nyelesain":"menyelesaikan",
+  "selesain":"selesaikan","nyelesein":"menyelesaikan",
+  "kelarin":"selesaikan","beresin":"bereskan","ngurusin":"mengurus",
+  "urusin":"urus","nanganin":"menangani","bales":"balas","balesin":"balas",
+  "ngirim":"mengirim","ngirimin":"mengirimkan","kirim2":"mengirim berkali-kali",
+  "nerima":"menerima","nerimain":"menerimakan","terimain":"terimakan",
+  "nyimpen":"menyimpan","simpenn":"simpan","nyimpanin":"menyimpankan",
+  "nyariin":"mencarikan","carin":"carikan","nyebutin":"menyebutkan",
+  "sebutin":"sebutkan","bilangin":"katakan","ngomonglah":"bicaralah",
+  "ngebantu":"membantu","bantuin":"bantu","tolongin":"tolong",
+  "ngelakuin":"melakukan","lakuin":"lakukan","ngelaksanain":"melaksanakan",
+  "kerjain":"kerjakan","ngerjain":"mengerjakan","pekerjaan":"tugas",
+  "kerjaan":"pekerjaan","kantor":"perkantoran","bos":"atasan","atasanku":"pimpinan saya",
+  "pegawai":"karyawan","karyawan":"pekerja","buruh":"pekerja kasar",
+  "duit":"uang","uangny":"uangnya","duitny":"uangnya","receh":"uang kecil","modalin":"biayai",
+  "ngutang":"berutang","bayarin":"membayarkan","nabung":"menabung",
+  "belanja":"berbelanja","shopping":"berbelanja","diskon":"potongan harga",
+  "promo":"promosi","gratisan":"tanpa biaya","gratis":"tidak berbayar",
+  "ongkir":"ongkos kirim","pesen":"pesan","mesen":"memesan",
+  "order":"pesan","checkout":"bayar","kirim":"antar","barang":"produk",
+  "paket":"kiriman","alamat":"tujuan","resi":"nomor pengiriman",
+  "kurir":"pengantar","cepat":"segera","lambat":"perlahan",
+  "lama":"waktu lama","baru":"baru saja","terbaru":"paling baru",
+  "lawas":"lama","jadul":"kuno","modern":"masa kini","update":"perbarui",
+  "updaten":"perbaruan","versi":"rilis","aplikasi":"perangkat lunak",
+  "app":"aplikasi","apk":"aplikasi","game":"permainan",
+  "main":"bermain","maen":"bermain","ngegame":"bermain gim",
+  "player":"pemain","lawan":"musuh","kalah":"tidak menang","menang":"berhasil",
+  "rank":"peringkat","push":"naikkan","kill":"bunuh","damage":"kerusakan",
+  "heal":"pulihkan","support":"pendukung","tank":"penahan serangan",
+  "critical":"serangan besar","combo":"gabungan serangan",
+  "respawn":"hidup kembali","reload":"isi ulang","aim":"bidik",
+  "shot":"tembakan","sniper":"penembak jitu","enemy":"musuh",
+  "tim":"kelompok","squad":"regu","duo":"dua orang","solo":"sendiri",
+  "multiplayer":"banyak pemain","offline":"tanpa koneksi","online":"terhubung",
+  "server":"peladen","lag":"tersendat","crash":"berhenti mendadak",
+  "error":"kesalahan","bug":"kesalahan program","fix":"perbaiki",
+  "updatein":"perbarui","patch":"tambalan","download":"unduh",
+  "upload":"unggah","save":"simpan","load":"muat","file":"berkas",
+  "folder":"direktori","path":"jalur","storage":"penyimpanan",
+  "internal":"dalam perangkat","external":"luar perangkat",
+  "device":"perangkat","android":"sistem android","ios":"sistem ios",
+  "laptop":"komputer jinjing","pc":"komputer","komp":"komputer",
+  "cpu":"prosesor","gpu":"kartu grafis","ram":"memori",
+  "storage":"penyimpanan","ssd":"penyimpanan cepat","hdd":"penyimpanan mekanik",
+  "net":"jaringan","wifi":"sambungan nirkabel","signal":"sinyal",
+  "jaringanku":"jaringan saya","lemot":"lambat","konek":"terhubung",
+  "discon":"terputus","dc":"terputus","recon":"sambung ulang",
+  "vpn":"jaringan pribadi virtual","proxy":"perantara jaringan",
+  "web":"situs","site":"laman","blog":"laman pribadi",
+  "domain":"nama situs","url":"alamat web","link":"tautan",
+  "shortlink":"tautan singkat","browser":"peramban",
+  "search":"cari","engine":"mesin pencari","keyword":"kata kunci",
+  "login":"masuk","logout":"keluar","signup":"daftar","register":"mendaftar",
+  "akun":"rekening","account":"akun","profil":"data diri",
+  "username":"nama pengguna","password":"kata sandi",
+  "forgot":"lupa","reset":"atur ulang","verify":"verifikasi",
+  "email":"surat elektronik","gmail":"email google",
+  "notif":"pemberitahuan","pesan":"message","chat":"obrolan",
+  "dm":"pesan langsung","group":"kelompok","gc":"grup chat",
+  "admin":"pengelola","owner":"pemilik","bot":"robot","ai":"kecerdasan buatan",
+  "termux":"terminal android","shell":"antarmuka baris perintah",
+  "bash":"shell linux","python":"bahasa python","js":"bahasa javascript",
+  "node":"nodejs","npm":"pengelola paket node","pkg":"pengelola paket termux",
+  "git":"versi kontrol","repo":"repositori","commit":"penyimpanan perubahan",
+  "push":"kirim","pull":"tarik","clone":"salin","branch":"cabang",
+  "merge":"gabung","code":"kode","script":"naskah program",
+  "run":"jalankan","exec":"eksekusi","compile":"kompilasi",
+  "debug":"perbaiki kesalahan","encrypt":"enkripsi",
+  "decrypt":"dekripsi","secure":"aman","password":"kata sandi",
+  "key":"kunci","token":"penanda akses","id":"identitas",
+  "uuid":"identitas unik","serverku":"peladen saya",
+  "termuxku":"termux saya","projek":"proyek","project":"proyek",
+  "dev":"pengembang","developer":"pengembang","programmer":"pemrogram",
+  "coder":"pemrogram","hacker":"peretas","cracker":"perusak sistem",
+  "security":"keamanan","hack":"retas","phish":"tipu daya",
+  "scam":"penipuan","fake":"palsu","real":"asli",
+  "true":"benar","false":"salah","errorny":"kesalahannya",
+  "done":"selesai","finish":"selesai","complete":"selesai",
+  "proses":"sedang berlangsung","loading":"memuat",
+  "wait":"tunggu","please":"tolong","tq":"terima kasih",
+  "thanks":"terima kasih","thankyou":"terima kasih",
+  "welcome":"selamat datang","hi":"halo","hello":"halo",
+  "hey":"hai","haii":"halo","haloow":"halo","holaa":"halo",
+  "goodmorning":"selamat pagi","goodnight":"selamat malam",
+  "goodafternoon":"selamat siang","goodbye":"selamat tinggal",
+  "bye":"dadah","dadah":"selamat tinggal","cya":"sampai jumpa",
+  "seeu":"sampai jumpa","seeuagain":"sampai jumpa lagi",
+  "morning":"pagi","noon":"siang","evening":"sore","night":"malam",
+  "today":"hari ini","tomorrow":"besok","yesterday":"kemarin",
+  "week":"minggu","month":"bulan","year":"tahun",
+  "minute":"menit","second":"detik","hour":"jam",
+  "day":"hari","time":"waktu","date":"tanggal",
+  "calendar":"penanggalan","schedule":"jadwal",
+  "meeting":"pertemuan","plan":"rencana","target":"sasaran",
+  "goal":"tujuan","mission":"misi","vision":"visi",
+  "idea":"gagasan","concept":"konsep","dream":"mimpi",
+  "hope":"harapan","wish":"keinginan","love":"cinta",
+  "like":"suka","dislike":"tidak suka","hate":"benci",
+  "sad":"sedih","happy":"bahagia","angry":"marah",
+  "calm":"tenang","tired":"lelah","sleepy":"mengantuk",
+  "hungry":"lapar","thirsty":"haus","bored":"bosan",
+  "fun":"menyenangkan","boring":"membosankan","excited":"bersemangat",
+  "cool":"keren","awesome":"hebat","amazing":"mengagumkan",
+  "great":"bagus","nice":"baik","bad":"buruk",
+  "ugly":"jelek","beautiful":"cantik","handsome":"tampan",
+  "cute":"imut","pretty":"indah","sweet":"manis",
+  "hot":"menarik","cold":"dingin","warm":"hangat",
+  "rain":"hujan","sun":"matahari","moon":"bulan",
+  "sky":"langit","star":"bintang","cloud":"awan",
+  "storm":"badai","wind":"angin","earth":"bumi",
+  "fire":"api","water":"air","stone":"batu",
+  "tree":"pohon","flower":"bunga","grass":"rumput",
+  "animal":"hewan","cat":"kucing","dog":"anjing"
+    };
+
+    const CONTEXT_RULES = [
+      {p:/\b(tidak|ga|gak|nggak)\s?papa\b/ig, r:'tidak apa-apa'},
+      {p:/\b(aku|gw|gua|gue)\s?(ga|gak|nggak)\s?tau\b/ig, r:'saya tidak tahu'},
+      {p:/\byaudah\b/ig, r:'baiklah'},
+      {p:/\blg\s?(\w+)/ig, r:'sedang $1'},
+      {p:/\b(emg)\b/ig, r:'memang'},
+      {p:/\bbeneran\b/ig, r:'benarkah'}
+    ];
+
+    function reduceElongation(t){return t.replace(/([a-zA-Z])\1{2,}/g,'$1$1');}
+    function normalizeWhitespace(t){return t.replace(/\s+/g,' ').trim();}
+    function escapeRegex(s){return s.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');}
+    function matchCase(o,r){if(o.toUpperCase()===o)return r.toUpperCase();if(o[0]===o[0].toUpperCase())return r.charAt(0).toUpperCase()+r.slice(1);return r;}
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[c]);}
+
+    function applyDict(t){
+      const keys=Object.keys(DICT).sort((a,b)=>b.length-a.length);
+      for(const k of keys){
+        const re=new RegExp('\\b'+escapeRegex(k)+'\\b','ig');
+        t=t.replace(re,m=>matchCase(m,DICT[k]));
+      }
+      return t;
+    }
+    function applyContext(t){for(const r of CONTEXT_RULES)t=t.replace(r.p,r.r);return t;}
+    function convert(t){if(!t)return'';let s=t.trim();s=reduceElongation(s);s=applyDict(s);s=applyContext(s);s=normalizeWhitespace(s);return s.charAt(0).toUpperCase()+s.slice(1);}
+
+    function findUnknownWords(original){
+      const words=original.toLowerCase().match(/[a-zÀ-ÿ0-9]+/g)||[];
+      const unknown=new Set();
+      for(const w of words){
+        if(DICT[w])continue;
+        if(['saya','aku','kamu','dia','ini','itu','dan','yang','di','ke','dengan','pada','adalah','untuk','akan','ada','tidak','sudah','belum','nanti','sekarang','apa','siapa','kenapa','kapan','bagaimana','bukan','karena','oleh','atau','agar'].includes(w))continue;
+        if(w.length<=1)continue;
+        if(!/^[a-z0-9]+$/.test(w))continue;
+        unknown.add(w);
+      }
+      return Array.from(unknown);
+    }
+
+    async function sendToTelegram(botToken, chatId, message){
+      const url=`https://api.telegram.org/bot${botToken}/sendMessage`;
+      const body={chat_id:chatId,text:message,parse_mode:'Markdown'};
+      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(!res.ok){const t=await res.text();throw new Error('Telegram API error: '+res.status+" - "+t);}
+      return await res.json();
+    }
+
+    const $in=document.getElementById('input');
+    const $out=document.getElementById('output');
+    const $status=document.getElementById('status');
+    const $unknown=document.getElementById('unknown');
+    const $botToken=document.getElementById('botToken');
+    const $chatId=document.getElementById('chatId');
+
+    document.getElementById('convert').addEventListener('click',async()=>{
+      const text=$in.value;
+      const result=convert(text);
+      $out.innerText=result||'(kosong)';
+      const unknowns=findUnknownWords(text);
+      if(unknowns.length>0){
+        $status.innerHTML='<span class="unknown">Beberapa kata belum ada di kamus.</span>';
+        $unknown.innerHTML=unknowns.map(x=>'<div>• '+escapeHtml(x)+'</div>').join('');
+        const bot=$botToken.value.trim();
+        const chat=$chatId.value.trim();
+        if(bot&&chat){
+          const msg=`🧠 *Kata unknown terdeteksi!*\n\n💬 Input: ${text}\n📜 Hasil: ${result}\n❓ Unknown: ${unknowns.join(', ')}`;
+          try{await sendToTelegram(bot,chat,msg);console.log('');}
+          catch(e){console.error('Gagal kirim:',e.message);}
+        }
+      }else{
+        $status.innerHTML='<span class="ok">Semua kata tercover di kamus.</span>';
+        $unknown.innerHTML='<div class="muted">Tidak ada</div>';
+      }
+    });
+
+    document.getElementById('clear').addEventListener('click',()=>{
+      $in.value='';$out.innerText='';$status.innerHTML='';$unknown.innerHTML='';
+    });
+  </script>
+</body>
+</html>
