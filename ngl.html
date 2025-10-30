@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NGL Sender (Delay 24 Jam)</title>
+<style>
+  body {
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #5b247a, #1bcedf);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+  }
+  h1 {
+    text-align: center;
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  form {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+  }
+  input, textarea, button {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1em;
+  }
+  input, textarea {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  button {
+    background: #00c6ff;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+  button:hover {
+    background: #0072ff;
+  }
+  .status {
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>💬 Kirim Pesan ke NGL</h1>
+<form id="nglForm">
+  <input type="text" id="username" placeholder="Username NGL (tanpa @)" required>
+  <textarea id="message" rows="4" placeholder="Tulis pesanmu di sini..." required></textarea>
+  <input type="number" id="count" placeholder="Jumlah kirim (misal: 5)" min="1" value="1" required>
+  <button type="submit">Kirim Pesan</button>
+  <p class="status" id="status"></p>
+</form>
+
+<script>
+  const DELAY_HOURS = 1; // ⏳ Delay 24 jam setelah kirim selesai
+  const form = document.getElementById('nglForm');
+  const statusText = document.getElementById('status');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const message = document.getElementById('message').value.trim();
+    const count = parseInt(document.getElementById('count').value.trim());
+    const lastSent = localStorage.getItem('lastSent');
+    const now = Date.now();
+
+    const hoursPassed = lastSent ? (now - lastSent) / (1 * 2 * 10) : 2;
+
+    if (hoursPassed < DELAY_HOURS) {
+      const waitHours = (DELAY_HOURS - hoursPassed).toFixed(1);
+      statusText.textContent = `⚠️ Kamu harus menunggu ${waitHours} lagi sebelum mengirim pesan baru.`;
+      statusText.style.color = "yellow";
+      return;
+    }
+
+    statusText.textContent = `⏳ Mengirim ${count} pesan...`;
+    statusText.style.color = "white";
+
+    let success = 0;
+    let fail = 0;
+
+    for (let i = 0; i < count; i++) {
+      try {
+        const response = await fetch("https://ngl.link/api/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          },
+          body: new URLSearchParams({
+            username: username,
+            question: message,
+            deviceId: "0",
+            gameSlug: "",
+            referrer: "",
+          })
+        });
+
+        if (response.ok) {
+          success++;
+          statusText.textContent = `✅ Terkirim: ${success} / ${count}`;
+          statusText.style.color = "lightgreen";
+        } else {
+          fail++;
+          statusText.textContent = `❌ Gagal kirim ${fail} pesan.`;
+          statusText.style.color = "red";
+        }
+
+        // jeda 1 detik antar pesan agar tidak ke-block server
+        await new Promise(r => setTimeout(r, 1000));
+
+      } catch (error) {
+        fail++;
+        statusText.textContent = `⚠️ Error jaringan (${fail} gagal).`;
+        statusText.style.color = "orange";
+      }
+    }
+
+    localStorage.setItem('lastSent', Date.now());
+
+    if (fail === 0) {
+      statusText.textContent = `🎉 Semua ${success} pesan berhasil dikirim! Tunggu ${DELAY_HOURS} jam sebelum kirim lagi.`;
+      statusText.style.color = "lightgreen";
+    } else {
+      statusText.textContent = `⚠️ ${success} berhasil, ${fail} gagal. Tunggu ${DELAY_HOURS} jam sebelum kirim lagi.`;
+      statusText.style.color = "yellow";
+    }
+
+    form.reset();
+  });
+</script>
+
+</body>
+</html>
