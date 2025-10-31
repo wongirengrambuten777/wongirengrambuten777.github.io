@@ -1,3 +1,4 @@
+// Hahahahah
 // script.js versi TikWM API
 document.getElementById("downloadBtn").addEventListener("click", async () => {
   const url = document.getElementById("videoUrl").value.trim();
