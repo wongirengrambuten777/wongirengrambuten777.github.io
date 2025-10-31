@@ -1,29 +1,29 @@
-document.getElementById("downloadBtn").addEventListener("click", () => {
+// script.js versi TikWM API
+document.getElementById("downloadBtn").addEventListener("click", async () => {
   const url = document.getElementById("videoUrl").value.trim();
   const resultBox = document.getElementById("result");
   const statusText = document.getElementById("statusText");
   const preview = document.getElementById("preview");
 
-  if (!url) {
-    alert("Masukkan URL TikTok terlebih dahulu!");
-    return;
-  }
+  if (!url) return alert("Masukkan URL TikTok dulu!");
 
   resultBox.classList.remove("hidden");
-  statusText.textContent = "🚀 Fitur unduh belum aktif. Ini hanya tampilan demo.";
-  preview.classList.add("hidden");
+  statusText.textContent = "⏳ Sedang memproses...";
 
-  // Nanti bisa diganti dengan fetch ke backend kamu
-  // fetch("https://your-backend/api/download", { method: "POST", body: JSON.stringify({ url }) })
-  //   .then(res => res.json())
-  //   .then(data => {
-  //     if (data.videoUrl) {
-  //       preview.src = data.videoUrl;
-  //       preview.classList.remove("hidden");
-  //       statusText.textContent = "✅ Berhasil memuat video!";
-  //     } else {
-  //       statusText.textContent = "❌ Gagal memuat video.";
-  //     }
-  //   })
-  //   .catch(() => statusText.textContent = "⚠️ Terjadi kesalahan.");
+  try {
+    const api = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`;
+    const res = await fetch(api);
+    const data = await res.json();
+
+    if (data.data && data.data.play) {
+      const videoLink = data.data.play;
+      preview.src = videoLink;
+      preview.classList.remove("hidden");
+      statusText.textContent = "✅ Video berhasil dimuat!";
+    } else {
+      statusText.textContent = "❌ Gagal memuat video.";
+    }
+  } catch (err) {
+    statusText.textContent = "⚠️ Terjadi kesalahan saat mengambil data.";
+  }
 });
